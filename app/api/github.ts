@@ -9,8 +9,13 @@ const repoCache = new LRUCache<string, GhUserUse[]>({
   ttl: 1000 * 60 * 60 * 24,
 })
 
-const repo_cache_file_path = "./data/cache.json"
-const repo_exists_file_path = "./data/repo_exists.json"
+const cacheDir =
+  process.env.GH_CONTRIBUTORS_CACHE_DIR ||
+  (process.env.VERCEL
+    ? "/tmp/gh-contributors"
+    : path.join(process.cwd(), "data"))
+const repoCacheFilePath = path.join(cacheDir, "cache.json")
+const repoExistsFilePath = path.join(cacheDir, "repo_exists.json")
 
 async function loadByPath<K extends {}, V extends {}>(
   cache: LRUCache<K, V>,
@@ -30,6 +35,7 @@ async function saveByPath<K extends {}, V extends {}>(
   filePath: string
 ) {
   try {
+    await fs.mkdir(path.dirname(filePath), { recursive: true })
     log(`--- ${filePath} saving cache ---`)
     const items = cache.dump()
     await fs.writeFile(filePath, JSON.stringify(items))
@@ -40,11 +46,11 @@ async function saveByPath<K extends {}, V extends {}>(
 }
 
 async function loadCache() {
-  log(`--- PAT: ${process.env.PAT} ---`)
+  log(`--- PAT configured: ${process.env.PAT ? "yes" : "no"} ---`)
   try {
-    await fs.mkdir(path.dirname(repo_cache_file_path), { recursive: true })
-    loadByPath(repoCache, repo_cache_file_path)
-    loadByPath(repoExists, repo_exists_file_path)
+    await fs.mkdir(cacheDir, { recursive: true })
+    loadByPath(repoCache, repoCacheFilePath)
+    loadByPath(repoExists, repoExistsFilePath)
   } catch (e) {
     log(e)
   }
@@ -52,10 +58,10 @@ async function loadCache() {
 
 loadCache()
 const throttleSaveRepoCache = throttle(() => {
-  saveByPath(repoCache, repo_cache_file_path)
+  saveByPath(repoCache, repoCacheFilePath)
 }, 1000 * 60)
 const throttleSaveRepoExists = throttle(() => {
-  saveByPath(repoExists, repo_exists_file_path)
+  saveByPath(repoExists, repoExistsFilePath)
 }, 1000 * 60)
 
 const repoExists = new LRUCache<string, number>({

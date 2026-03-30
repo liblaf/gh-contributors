@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { generateSVG } from "./svg"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const searchParams = req.nextUrl.searchParams

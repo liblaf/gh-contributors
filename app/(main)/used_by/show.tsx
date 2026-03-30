@@ -73,6 +73,7 @@ export function Show() {
                 href={`/api?repo=${repo.name}&pages=${repo.pages}`}
               >
                 <Image
+                  alt={`${repo.name} contributors`}
                   src={`${host}/api?repo=${repo.name}&pages=${repo.pages}`}
                 />
               </Link>
